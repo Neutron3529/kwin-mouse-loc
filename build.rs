@@ -48,7 +48,8 @@ fn main() {
         .expect("Unable to generate bindings");
 
     // Write the bindings to the OUT_DIR file.
-    let mut file = File::create(format!("{}/consts.rs",env::var("OUT_DIR").unwrap())).expect("cannot save to $OUT_DIR");
+    let mut file = File::create(format!("{}/consts.rs", env::var("OUT_DIR").unwrap()))
+        .expect("cannot save to $OUT_DIR");
     write!(&mut file, "pub const POS_OFFSET: usize = {};\npub const WORKSPACE_OFFSET: usize = 0x{}usize;\n",
         bindings
             .to_string()

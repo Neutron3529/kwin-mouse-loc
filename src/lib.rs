@@ -1,3 +1,37 @@
+//! # kwin-mouse-loc
+//!
+//! A very simple mouse controller that uses `libc::process_vm_readv` to read mouse location. Need root permissions.
+//!
+//! # Usage
+//!
+//! Since mouse and keyboard operations is very dangerous, it might be easily be poisoned.
+//! And since there is no guarateen that crate owner is not evil, I wrote this simple crate.
+//!
+//! The main aim of this crate is that, make user ensure they use a *SAFE* crate that cannot be poisoned.
+//! The *BEST* practice of using this crate should be just copy the `build.rs` and `lib.rs` into your project.
+//!
+//! If you like this crate, you could make it as an optional dependencies, BUT please keep one thing in mind:
+//!
+//! > DO NOT ENABLE THE DEPENDENCIES OF THIS CRATE
+//!
+//! # Example
+//!
+//! (all the tests require root permissions, without root permissions, the program might failed to execute)
+//!
+//! ```rust
+//! use kwin_mouse_loc::pointer::Workspace;
+//! fn main(){
+//!     let mouse = unsafe{Workspace::new(true).get_mouse()};
+//!     let (x,y) = mouse.loc();
+//!     println!("mouse is located at ({x}, {y})");
+//!     // do some other things.
+//!     std::thread::sleep(std::time::Duration::from_millis(300));
+//!
+//!     // obtain mouse location again, with display.
+//!     println!("mouse is located at {mouse}");
+//! }
+//! ```
+
 #![warn(unsafe_op_in_unsafe_fn)]
 mod consts {
     include!(concat!(env!("OUT_DIR"), "/consts.rs"));
@@ -14,29 +48,40 @@ pub mod pointer {
     impl KWinPid {
         /// SAFETY: users should ensure this is the pid of kwin_wayland, and this PID is valid before this program exited.
         pub unsafe fn from(i: i32) -> Self {
+            unsafe {
+                if libc::getuid() != 0 {
+                    // if is not root
+                    if libc::setuid(0) != 0 {
+                        // if cannot be root
+                        panic!("cannot set uid to 0, further code could not be executed.")
+                    }
+                }
+            }
             Self(i)
         }
         /// SAFETY: users should ensure this is the pid of kwin_wayland, and this PID is valid before this program exited.
         pub unsafe fn search(all_user: bool) -> Self {
-            Self(
-                String::from_utf8_lossy(
-                    &Command::new("ps")
-                        .arg(if all_user { "ax" } else { "x" }) // "a" is needed since there might not be a wayland window running by root.
-                        .output()
-                        .expect("cannot enumerate programs")
-                        .stdout,
+            unsafe {
+                Self::from(
+                    String::from_utf8_lossy(
+                        &Command::new("ps")
+                            .arg(if all_user { "ax" } else { "x" }) // "a" is needed since there might not be a wayland window running by root.
+                            .output()
+                            .expect("cannot enumerate programs")
+                            .stdout,
+                    )
+                    .lines()
+                    .filter(|x| x.contains("/kwin_wayland "))
+                    .next()
+                    .expect("failed to find kwin_wayland session")
+                    .trim()
+                    .split_once(' ')
+                    .expect("cannot parse `ps`'s output")
+                    .0
+                    .parse()
+                    .expect("cannot parse the pid"),
                 )
-                .lines()
-                .filter(|x| x.contains("/kwin_wayland "))
-                .next()
-                .expect("failed to find kwin_wayland session")
-                .trim()
-                .split_once(' ')
-                .expect("cannot parse `ps`'s output")
-                .0
-                .parse()
-                .expect("cannot parse the pid"),
-            )
+            }
         }
     }
     #[derive(Eq, PartialEq)]
@@ -45,9 +90,10 @@ pub mod pointer {
     impl Workspace {
         /// Automatically create a workspace pointer with default offset (might be wrong!) and automatically detected kwin_wayland (may also wrong!).
         /// Use for test and demo only.
+        ///
         /// SAFETY: Ensure the WORKSPACE_OFFSET is correct.
         ///
-        /// require root permissions to calculate the workspace's offset.
+        /// require root permissions to calculate the workspace's offset. If the root permission is provided by
         pub unsafe fn new(search_all_user: bool) -> Self {
             unsafe { Self::get(KWinPid::search(search_all_user), WORKSPACE_OFFSET) }
         }
@@ -181,7 +227,7 @@ mod test {
     use pointer::{KWinPid, Workspace};
     #[test]
     fn equality() {
-        let w1 = unsafe { Workspace::new(true) }; // most simple way
+        let w1 = unsafe { Workspace::new(true) }; // most simple way. Note: if use suid and running the program as the wayland user, use Workspace::new(false) could be better.
 
         let pid = unsafe { KWinPid::search(true) }; // calc pid
         let offset = Workspace::get_offset_with_readelf("readelf", "/usr/lib/libkwin.so"); // calc offset
