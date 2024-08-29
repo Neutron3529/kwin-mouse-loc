@@ -1,5 +1,7 @@
 #![warn(unsafe_op_in_unsafe_fn)]
-mod consts;
+mod consts {
+    include!(concat!(env!("OUT_DIR"), "/consts.rs"));
+}
 /// pointer of kwin workspace and its cursor's position
 pub mod pointer {
     use crate::consts::*;
