@@ -1,6 +1,6 @@
 [package]
 name = "kwin-mouse-loc"
-version = "0.0.0-pre-0.0.1"
+version = "0.0.0-pre-0.0.2"
 edition = "2021"
 authors = ["Neutron3529 <qweytr_1@163.com>"]
 description = "A very simple mouse controller that uses `libc::process_vm_readv` to read mouse location. Need root permissions."
@@ -14,3 +14,6 @@ libc = { version = "0.2.158", default-features = false }
 
 [build-dependencies]
 bindgen = "0.70.1"
+
+[features]
+uinput = []

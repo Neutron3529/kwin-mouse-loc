@@ -33,9 +33,13 @@
 //! ```
 
 #![warn(unsafe_op_in_unsafe_fn)]
+
+#[cfg(feature = "uinput")]
+pub mod device;
 mod consts {
     include!(concat!(env!("OUT_DIR"), "/consts.rs"));
 }
+
 /// pointer of kwin workspace and its cursor's position
 pub mod pointer {
     use crate::consts::*;
@@ -220,6 +224,7 @@ pub mod pointer {
         }
     }
 }
+
 #[cfg(test)]
 mod test {
     use crate::*;
