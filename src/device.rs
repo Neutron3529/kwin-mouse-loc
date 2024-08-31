@@ -62,15 +62,14 @@ impl IoCtl {
             ioctl(fd, UI_DEV_SETUP, &definition);
             ioctl(fd, UI_DEV_CREATE);
         }
-        let mut ret = Self(
+        Self(
             file,
             timeval {
                 tv_sec: 0,
                 tv_usec: 0,
             },
             Vec::with_capacity(100),
-        );
-        ret
+        )
     }
     fn event(&mut self, type_: u16, code: u16, value: i32) {
         use std::io::Write;
