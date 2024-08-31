@@ -97,7 +97,6 @@ impl IoCtl {
             self.1.tv_usec -= 1_000_000;
         }
         std::thread::sleep(SYNC_SLEEP);
-        println!("sync done");
     }
     pub fn send(&mut self, type_: u16, code: u16, val: i32) {
         self.event(type_, code, val);
