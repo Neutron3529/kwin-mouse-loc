@@ -10,10 +10,12 @@ use libc::ioctl;
 use std::{
     fs::{File, OpenOptions},
     mem,
-    os::{fd::AsRawFd, unix::fs::OpenOptionsExt},
+    os::{fd::AsRawFd /*unix::fs::OpenOptionsExt*/},
+    time::Duration,
 };
 
 pub struct IoCtl(File, timeval, Vec<u8>);
+const SYNC_SLEEP: Duration = Duration::from_millis(1);
 impl Drop for IoCtl {
     fn drop(&mut self) {
         unsafe {
@@ -25,7 +27,7 @@ impl IoCtl {
     pub fn new() -> Self {
         let file = OpenOptions::new()
             .write(true)
-            .custom_flags(libc::O_NONBLOCK)
+            // .custom_flags(libc::O_NONBLOCK)
             .open("/dev/uinput")
             .unwrap();
         let mut name = [0; 80];
@@ -60,14 +62,15 @@ impl IoCtl {
             ioctl(fd, UI_DEV_SETUP, &definition);
             ioctl(fd, UI_DEV_CREATE);
         }
-        Self(
+        let mut ret = Self(
             file,
             timeval {
                 tv_sec: 0,
                 tv_usec: 0,
             },
-             Vec::with_capacity(100)
-        )
+            Vec::with_capacity(100),
+        );
+        ret
     }
     fn event(&mut self, type_: u16, code: u16, value: i32) {
         use std::io::Write;
@@ -87,12 +90,14 @@ impl IoCtl {
         use std::io::Write;
         self.event(EV_SYN as u16, SYN_REPORT as u16, 0);
         self.0.write_all(&self.2).unwrap();
+        self.0.flush().unwrap();
         self.2.clear();
         self.1.tv_usec = self.1.tv_usec.wrapping_add(1);
         if self.1.tv_usec >= 1_000_000 {
             self.1.tv_sec += 1;
             self.1.tv_usec -= 1_000_000;
         }
+        std::thread::sleep(SYNC_SLEEP);
         println!("sync done");
     }
     pub fn send(&mut self, type_: u16, code: u16, val: i32) {
@@ -105,9 +110,9 @@ impl IoCtl {
         println!("try move {x} {y}");
     }
     pub fn press(&mut self, btn: u16) {
-        self.send(EV_KEY as u16, btn, 0)
+        self.send(EV_KEY as u16, btn, 1)
     }
     pub fn release(&mut self, btn: u16) {
-        self.send(EV_KEY as u16, btn, 1)
+        self.send(EV_KEY as u16, btn, 0)
     }
 }
