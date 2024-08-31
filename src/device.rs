@@ -105,7 +105,6 @@ impl IoCtl {
     pub fn move_mouse(&mut self, x: i32, y: i32) {
         self.event(EV_REL as u16, REL_X as u16, x);
         self.send(EV_REL as u16, REL_Y as u16, y);
-        println!("try move {x} {y}");
     }
     pub fn press(&mut self, btn: u16) {
         self.send(EV_KEY as u16, btn, 1)
