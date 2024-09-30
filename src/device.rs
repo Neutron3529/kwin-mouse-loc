@@ -36,7 +36,7 @@ impl IoCtl {
             .for_each(|(n, s)| *n = s);
         let definition = uinput_setup {
             id: input_id {
-                bustype: BUS_USB as u16,
+                bustype: BUS_VIRTUAL as u16,
                 vendor: 0x045e,
                 product: 0x07a5,
                 version: 0x0111,
@@ -54,11 +54,13 @@ impl IoCtl {
             ioctl(fd, UI_SET_EVBIT, EV_REL);
             ioctl(fd, UI_SET_RELBIT, REL_X);
             ioctl(fd, UI_SET_RELBIT, REL_Y);
+            // no need to register ABSBIT since it is touchpad related things.
+            #[cfg(feature = "keyboard")]
+            for code in KEY_RESERVED..=KEY_MICMUTE {
+                ioctl(fd, UI_SET_EVBIT, EV_KEY);
+                ioctl(fd, UI_SET_KEYBIT, code);
+            }
 
-            // for code in [ABS_X, ABS_Y, ABS_WHEEL] {
-            //     ioctl(fd, UI_SET_EVBIT, EV_KEY);
-            //     ioctl(fd, UI_SET_ABSBIT, code);
-            // }
             ioctl(fd, UI_DEV_SETUP, &definition);
             ioctl(fd, UI_DEV_CREATE);
         }

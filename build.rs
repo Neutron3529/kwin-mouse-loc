@@ -1,4 +1,4 @@
-use std::{env, fs::File, io::Write as _,fmt::Write, process::Command};
+use std::{env, fmt::Write, fs::File, io::Write as _, process::Command};
 fn main() {
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
@@ -69,7 +69,9 @@ fn main() {
 
     if cfg!(feature = "uinput") {
         let contents = &mut "#include<linux/input.h>\n#include<linux/uinput.h>\n".to_owned();
-        let force_include = |s:&mut String,ty, val|write!(s,"\nconst {ty} rust_bindgen_exclude_{val} = {val};\n#undef {val}\n const {ty} {val} = rust_bindgen_exclude_{val};").expect("write header failed.");
+        let force_include = |s: &mut String, ty, val| {
+            write!(s,"\nconst {ty} rust_bindgen_exclude_{val} = {val};\n#undef {val}\n const {ty} {val} = rust_bindgen_exclude_{val};").expect("write header failed.")
+        };
         force_include(contents, "unsigned long", "UI_DEV_SETUP");
         force_include(contents, "unsigned long", "UI_DEV_CREATE");
         force_include(contents, "unsigned long", "UI_DEV_DESTROY");
@@ -78,32 +80,33 @@ fn main() {
         force_include(contents, "unsigned long", "UI_SET_RELBIT");
         force_include(contents, "unsigned long", "UI_SET_ABSBIT");
 
-
         let bindings = bindgen::Builder::default()
-        // The input header we would like to generate
-        // bindings for.
-        .use_core()
-        .header_contents("header.h", contents)
-        .allowlist_type("^((input_event|uinput_setup))$")
-        .allowlist_var("^(.*)$")
-        .blocklist_var("^(rust_bindgen_exclude_.*)$")
-        .default_visibility(bindgen::FieldVisibilityKind::Public)
-        .clang_args(
-            env::var("UINPUT_INCLUDE")
-            .as_deref()
-            .unwrap_or("/usr/include")
-            .split('\n')
-            .map(str::trim)
-            .filter(|x| x.len() > 0)
-            .map(|x| format!("-I{}", x)),
-        )
-        // Tell cargo to invalidate the built crate whenever any of the
-        // included header files changed.
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
-        // Finish the builder and generate the bindings.
-        .generate()
-        // Unwrap the Result and panic on failure.
-        .expect("Unable to generate bindings");
-        bindings.write_to_file(format!("{}/uinput.rs", env::var("OUT_DIR").unwrap())).expect("cannot deal with uinput")
+            // The input header we would like to generate
+            // bindings for.
+            .use_core()
+            .header_contents("header.h", contents)
+            .allowlist_type("^((input_event|uinput_setup))$")
+            .allowlist_var("^(.*)$")
+            .blocklist_var("^(rust_bindgen_exclude_.*)$")
+            .default_visibility(bindgen::FieldVisibilityKind::Public)
+            .clang_args(
+                env::var("UINPUT_INCLUDE")
+                    .as_deref()
+                    .unwrap_or("/usr/include")
+                    .split('\n')
+                    .map(str::trim)
+                    .filter(|x| x.len() > 0)
+                    .map(|x| format!("-I{}", x)),
+            )
+            // Tell cargo to invalidate the built crate whenever any of the
+            // included header files changed.
+            .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+            // Finish the builder and generate the bindings.
+            .generate()
+            // Unwrap the Result and panic on failure.
+            .expect("Unable to generate bindings");
+        bindings
+            .write_to_file(format!("{}/uinput.rs", env::var("OUT_DIR").unwrap()))
+            .expect("cannot deal with uinput")
     }
 }

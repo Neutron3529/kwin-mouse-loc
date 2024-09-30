@@ -226,6 +226,7 @@ pub mod pointer {
 }
 
 #[cfg(test)]
+#[cfg(feature = "test")]
 mod test {
     use crate::*;
     use consts::WORKSPACE_OFFSET;
