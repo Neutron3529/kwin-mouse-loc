@@ -18,7 +18,7 @@
 //!
 //! (all the tests require root permissions, without root permissions, the program might failed to execute)
 //!
-//! ```rust
+//! ```no_run
 //! use kwin_mouse_loc::pointer::Workspace;
 //! fn main(){
 //!     let mouse = unsafe{Workspace::new(true).get_mouse()};
@@ -33,11 +33,22 @@
 //! ```
 
 #![warn(unsafe_op_in_unsafe_fn)]
-
+#![cfg_attr(doc, feature(doc_cfg))]
 #[cfg(feature = "uinput")]
 pub mod device;
-mod consts {
+/// Some constants, which could be updated if feature `update-offset` is set.
+/// It is worth mention that, the `update-offset` feature highly relies on `readelf` executable, and use the following sections:
+/// ```text
+/// .kwin.mouse.loc.pos
+/// .kwin.mouse.loc.kwin
+/// .kwin.mouse.loc.offset
+/// ```
+/// Adding other variable into such section may damage the executable.
+pub mod consts {
     include!(concat!(env!("OUT_DIR"), "/consts.rs"));
+    #[cfg_attr(doc, doc(cfg(feature = "update-offset")))]
+    #[cfg(any(doc, feature = "update-offset"))]
+    include!("update_offset.rs");
 }
 
 /// pointer of kwin workspace and its cursor's position

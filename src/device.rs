@@ -4,7 +4,9 @@ mod bindgen {
     #![allow(non_camel_case_types)]
     #![allow(non_snake_case)]
     include!(concat!(env!("OUT_DIR"), "/uinput.rs"));
-    pub fn parse(x: impl ParseKeyCode) -> u32 { x.parse_keycode() }
+    pub fn parse(x: impl ParseKeyCode) -> u32 {
+        x.parse_keycode()
+    }
     pub trait ParseKeyCode {
         fn parse_keycode(self) -> u32;
     }
@@ -104,18 +106,18 @@ mod bindgen {
                 ',' => KEY_COMMA,
                 '.' => KEY_DOT,
 
-                '1' =>KEY_1,
-                '2' =>KEY_2,
-                '3' =>KEY_3,
-                '4' =>KEY_4,
-                '5' =>KEY_5,
-                '6' =>KEY_6,
-                '7' =>KEY_7,
-                '8' =>KEY_8,
-                '9' =>KEY_9,
-                '0' =>KEY_0,
-                '-' =>KEY_MINUS,
-                '=' =>KEY_EQUAL,
+                '1' => KEY_1,
+                '2' => KEY_2,
+                '3' => KEY_3,
+                '4' => KEY_4,
+                '5' => KEY_5,
+                '6' => KEY_6,
+                '7' => KEY_7,
+                '8' => KEY_8,
+                '9' => KEY_9,
+                '0' => KEY_0,
+                '-' => KEY_MINUS,
+                '=' => KEY_EQUAL,
 
                 _ => {
                     eprintln! {"Unsupported {self}, converted to KEY_ESC. Use uppercase WSAD for key up/down/left/right, LMR for mouse left/middle/right key. Uppercase are often not what it looks like, be careful."}
@@ -220,7 +222,7 @@ impl IoCtl {
     pub fn release(&mut self, btn: impl IntoU16) {
         self.send(EV_KEY as u16, btn.into(), 0)
     }
-    pub fn click(&mut self, btn: impl IntoU16, half_dur:Duration) {
+    pub fn click(&mut self, btn: impl IntoU16, half_dur: Duration) {
         self.press(btn.into());
         std::thread::sleep(half_dur);
         self.release(btn.into());

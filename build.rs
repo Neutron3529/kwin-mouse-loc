@@ -51,7 +51,7 @@ fn main() {
     // Write the bindings to the OUT_DIR file.
     let mut file = File::create(format!("{}/consts.rs", env::var("OUT_DIR").unwrap()))
         .expect("cannot save to $OUT_DIR");
-    write!(&mut file, "pub const POS_OFFSET: usize = {};\npub const WORKSPACE_OFFSET: usize = 0x{}usize;\n",
+    write!(&mut file, "#[used]\n#[unsafe(link_section = \".kwin.mouse.loc.pos\")]\npub(crate) static mut POS_OFFSET: usize = {};\n#[used]\n#[unsafe(link_section = \".kwin.mouse.loc.kwin\")]\npub(crate) static mut WORKSPACE_OFFSET: usize = 0x{:06x}usize;\n",
         bindings
             .to_string()
             .split_once(r#"offset_of!(KWin_Workspace, focusMousePos)"#)
@@ -64,7 +64,7 @@ fn main() {
             .expect("grab offset failed")
             .1
             .trim(),
-        String::from_utf8(Command::new("readelf").args(["-WCs", "/usr/lib/libkwin.so"]).output().expect("readelf execute failed").stdout).expect("failed to parse readelf").split_once(r#"KWin::Workspace::_self"#).expect("cannot find KWin::Workspace::_self").0.rsplit_once('\n').expect("cannot read offset of KWin::Workspace::_self").1.split_once(':').expect("parse `:` failed.").1.trim().split_once(' ').expect("cannot parse space").0
+        usize::from_str_radix(String::from_utf8(Command::new("readelf").args(["-WCs", "/usr/lib/libkwin.so"]).output().expect("readelf execute failed").stdout).expect("failed to parse readelf").split_once(r#"KWin::Workspace::_self"#).expect("cannot find KWin::Workspace::_self").0.rsplit_once('\n').expect("cannot read offset of KWin::Workspace::_self").1.split_once(':').expect("parse `:` failed.").1.trim().split_once(' ').expect("cannot parse space").0,16).expect("cannot parse offset")
     ).expect("write failed");
 
     if cfg!(feature = "uinput") {

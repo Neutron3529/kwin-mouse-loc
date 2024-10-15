@@ -13,9 +13,12 @@ keywords = ["wayland","KDE","KWin","mouse"]
 keyboard = ["uinput"]
 uinput = []
 test = []
+update-offset = []
+update-pos = ["update-offset","dep:bindgen"]
 
 [build-dependencies]
 bindgen = { version = "0.70.1", default-features = false }
 
 [dependencies]
 libc = { version = "0.2.159", default-features = false }
+bindgen = { version = "0.70.1", default-features = false, optional = true }
