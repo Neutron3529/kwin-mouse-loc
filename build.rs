@@ -3,6 +3,19 @@ fn main() {
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
     // the resulting bindings.
+    if cfg!(feature = "docgen") {
+        let mut file = File::create(format!("{}/consts.rs", env::var("OUT_DIR").unwrap())).unwrap();
+        write!(&mut file, r#"/// for docgen only, should not rely on it.
+#[used]
+#[unsafe(link_section = ".kwin.mouse.loc.pos")]
+pub(crate) static mut POS_OFFSET: usize = 176usize;
+/// for docgen only, should not rely on it.
+#[used]
+#[unsafe(link_section = ".kwin.mouse.loc.kwin")]
+pub(crate) static mut WORKSPACE_OFFSET: usize = 0x7974d0usize;
+"#).unwrap();
+        return;
+    }
     let bindings = bindgen::Builder::default()
         // The input header we would like to generate
         // bindings for.
