@@ -32,11 +32,16 @@
 //! }
 //! ```
 //! # Features
-//! `docgen`        : for publish (and doc generation without process header file)
+//! `docgen-detect` : for publish (and doc generation without process header file) thus enabled by default. For normal use, just disable it.
+//!
 //! `keyboard`      : requires `uinput`, allow using keyboard commands
+//!
 //! `uinput`        : process uinput constants from header files.
+//!
 //! `test`          : enable tests, since most of the tests needs root permission, be aware.
+//!
 //! `update-offset` : update the offset of workspace related to libkwin. Especially useful after the libkwin.so updated.
+//!
 //! `update-pos`    : requires `update-offset`, also update the field offset of mouse position
 #![warn(unsafe_op_in_unsafe_fn)]
 #![cfg_attr(doc, feature(doc_cfg))]
