@@ -1,19 +1,57 @@
-use std::{env, fmt::Write, fs::File, io::Write as _, process::Command};
+use std::{
+    env,
+    fmt::Write,
+    fs::{self, File},
+    io::Write as _,
+    process::Command,
+};
+macro_rules! kwin {
+    ()=>{
+        env::var("KWIN_INCLUDE")
+        .as_deref()
+            .unwrap_or(r#"
+                /usr/include
+                /usr/include/kwin
+                /usr/include/KF6/KConfig
+                /usr/include/KF6/KConfigCore
+                /usr/include/KF6/KWindowSystem
+                /usr/include/qt6
+                /usr/include/qt6/QtCore
+                /usr/include/qt6/QtDBus
+                /usr/include/qt6/QtGui
+                /usr/include/qt6/QtWidgets
+            "#)
+            .split('\n')
+            .map(str::trim)
+            .filter(|x| x.len() > 0)
+    }
+}
+// fn kwin<'a, E>(var: Result<&'a str, E>) -> impl Iterator<Item = &'a str> {
+//     var
+// }
 fn main() {
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
     // the resulting bindings.
-    if cfg!(feature = "docgen") {
+    if cfg!(feature = "docgen-detect")
+        && !kwin!().all(|x| fs::exists(x).unwrap_or(false))
+    {
+        #[cfg(not(doc))]
+        println!("cargo:warning=Some folder located in KWIN_INCLUDE (or the default files) does not exists, generating dummy offset file instead. Please set KWIN_INCLUDE manually to prevent this warning occurs.");
         let mut file = File::create(format!("{}/consts.rs", env::var("OUT_DIR").unwrap())).unwrap();
-        write!(&mut file, r#"/// for docgen only, should not rely on it.
+        write!(
+            &mut file,
+            r#"/// for docgen only, should not rely on its value.
 #[used]
 #[unsafe(link_section = ".kwin.mouse.loc.pos")]
-pub(crate) static mut POS_OFFSET: usize = 176usize;
-/// for docgen only, should not rely on it.
+pub(crate) static mut POS_OFFSET: usize = 176usize; // seems stable
+/// for docgen only, must not rely on its value since it will change each time when libkwin.so updated.
 #[used]
 #[unsafe(link_section = ".kwin.mouse.loc.kwin")]
-pub(crate) static mut WORKSPACE_OFFSET: usize = 0x7974d0usize;
-"#).unwrap();
+pub(crate) static mut WORKSPACE_OFFSET: usize = 0x0usize;
+"#
+        )
+        .unwrap();
         return;
     }
     let bindings = bindgen::Builder::default()
@@ -23,25 +61,7 @@ pub(crate) static mut WORKSPACE_OFFSET: usize = 0x7974d0usize;
         .header_contents("header.hpp", "#include<workspace.h>")
         .allowlist_type("^(.*Workspace.*)$")
         .clang_args(
-            env::var("KWIN_INCLUDE")
-                .as_deref()
-                .unwrap_or(
-                    r#"
-                        /usr/include
-                        /usr/include/kwin
-                        /usr/include/KF6/KConfig
-                        /usr/include/KF6/KConfigCore
-                        /usr/include/KF6/KWindowSystem
-                        /usr/include/qt6
-                        /usr/include/qt6/QtCore
-                        /usr/include/qt6/QtDBus
-                        /usr/include/qt6/QtGui
-                        /usr/include/qt6/QtWidgets
-                    "#,
-                )
-                .split('\n')
-                .map(str::trim)
-                .filter(|x| x.len() > 0)
+            kwin!()
                 .map(|x| format!("-I{}", x))
                 .chain(
                     env::var("CUSTOM_ARGS")
