@@ -1,7 +1,7 @@
 [package]
 name = "kwin-mouse-loc"
-version = "0.0.1-pre-0.0.1-another-try-docfix"
-edition = "2021"
+version = "0.0.2-pre"
+edition = "2024"
 authors = ["Neutron3529 <qweytr_1@163.com>"]
 description = "A very simple mouse controller that uses `libc::process_vm_readv` to read mouse location. Need root permissions."
 repository = "https://github.com/Neutron3529/kwin-mouse-loc/"
@@ -19,8 +19,8 @@ update-offset = []
 update-pos = ["update-offset","dep:bindgen"]
 
 [build-dependencies]
-bindgen = { version = "0.70.1", default-features = false }
+bindgen = { version = "0.71.1", default-features = false }
 
 [dependencies]
-libc = { version = "0.2.159", default-features = false }
-bindgen = { version = "0.70.1", default-features = false, optional = true }
+bindgen = { version = "0.71.1", default-features = false, optional = true }
+libc = { version = "0.2.169", default-features = false }
