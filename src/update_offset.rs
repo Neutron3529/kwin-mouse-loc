@@ -1,4 +1,4 @@
-use std::{env, fs::OpenOptions, process::Command};
+use std::{env, path::Path, fs::{self, OpenOptions}, process::Command};
 /// Update offset for WORKSPACE_OFFSET and POS_OFFSET using default path.
 ///
 /// Since it modify static variable and executable, this function terminates the execution flow.
@@ -101,6 +101,7 @@ pub fn get_offset(data: &str, section: &str) -> usize {
     )
     .expect("cannot parse address as usize")
 }
+
 /// Save offset into the program itself. Also modify static mut variables.
 ///
 /// Do not use it unless you know what you're doing.
@@ -108,11 +109,29 @@ pub unsafe fn save_offset(val: usize, item: Offset) {
     use std::io::{Read, Seek, SeekFrom, Write};
 
     let exe = &env::current_exe().expect("cannot find current exe");
-    let mut file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open(exe)
-        .expect("cannot modify current exe");
+
+    enum DropGuard<T: AsRef<Path>, U: AsRef<Path>> {
+        Some(T, U),
+        None
+    }
+    impl<T: AsRef<Path>, U: AsRef<Path>> Drop for DropGuard<T,U> {
+        fn drop(&mut self) {
+            if let Self::Some(tmp, exe) = self {
+                fs::rename(tmp, exe).expect("Execution failed, the original file cannot be overwritten.");
+            }
+        }
+    }
+    let (mut file, drop_guard) = if let Ok(file) = OpenOptions::new().read(true).write(true).open(exe) {
+        (file, DropGuard::None)
+    } else {
+        println!("Using drop guard to prevent ETXTBSY issues.");
+        use std::time::{Duration, SystemTime, UNIX_EPOCH};
+        let mut x = std::env::temp_dir();
+        x.push(format!("kwin-mouse-loc.{}.tmp", SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or(Duration::from_nanos(u64::MAX)).as_nanos()));
+        fs::copy(exe, &x).expect("cannot visit tmp file.");
+        let file = OpenOptions::new().read(true).write(true).open(&x).expect("can neither current exe nor the tmp file can be modified.");
+        (file, DropGuard::Some(x, exe))
+    };
     let offset = unsafe {
         if OFFSET[0] == 0 {
             println!(
@@ -166,7 +185,8 @@ pub unsafe fn save_offset(val: usize, item: Offset) {
     file.seek(SeekFrom::Start(offset as u64))
         .expect("cannot seek file");
     file.write(&val.to_ne_bytes()).expect("cannot save file.");
-    file.sync_all().expect("cannot sync file.")
+    file.sync_all().expect("cannot sync file.");
+    drop(drop_guard)
 }
 /// got offset of `KWin::Workspace::_self` from elf file
 pub fn offset_kwin(elf_file: &str) -> usize {

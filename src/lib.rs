@@ -201,7 +201,7 @@ pub mod pointer {
             };
             // SAFETY: As KWinPid suggests, the safety of KWinPid ensure that the pid is valid,
             //         Since offset is ensured to be valid, the result is safe.
-            match unsafe { process_vm_readv(self.0 .0, &local, 1, &remote, 1, 0) } {
+            match unsafe { process_vm_readv(self.0.0, &local, 1, &remote, 1, 0) } {
                 8 => assert!(!addr.is_null()),
                 -1 => {
                     eprintln!("failed, check errno for more details.")
@@ -229,7 +229,7 @@ pub mod pointer {
             };
             // SAFETY: If you could read the code, it is safe.
             //         Otherwise it is very unsafe.
-            match unsafe { process_vm_readv(self.0 .0, &local, 1, &remote, 1, 0) } {
+            match unsafe { process_vm_readv(self.0.0, &local, 1, &remote, 1, 0) } {
                 16 => return (xy[0], xy[1]),
                 -1 => {
                     eprintln!("failed, check errno for more details.")

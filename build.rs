@@ -6,10 +6,11 @@ use std::{
     process::Command,
 };
 macro_rules! kwin {
-    ()=>{
+    () => {
         env::var("KWIN_INCLUDE")
-        .as_deref()
-            .unwrap_or(r#"
+            .as_deref()
+            .unwrap_or(
+                r#"
                 /usr/include
                 /usr/include/kwin
                 /usr/include/KF6/KConfig
@@ -20,11 +21,12 @@ macro_rules! kwin {
                 /usr/include/qt6/QtDBus
                 /usr/include/qt6/QtGui
                 /usr/include/qt6/QtWidgets
-            "#)
+            "#,
+            )
             .split('\n')
             .map(str::trim)
             .filter(|x| x.len() > 0)
-    }
+    };
 }
 // fn kwin<'a, E>(var: Result<&'a str, E>) -> impl Iterator<Item = &'a str> {
 //     var
@@ -33,11 +35,11 @@ fn main() {
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
     // the resulting bindings.
-    if cfg!(feature = "docgen-detect")
-        && !kwin!().all(|x| fs::exists(x).unwrap_or(false))
-    {
+    if cfg!(feature = "docgen-detect") && !kwin!().all(|x| fs::exists(x).unwrap_or(false)) {
         #[cfg(not(doc))]
-        println!("cargo:warning=Some folder located in KWIN_INCLUDE (or the default files) does not exists, generating dummy offset file instead. Please set KWIN_INCLUDE manually to prevent this warning occurs.");
+        println!(
+            "cargo:warning=Some folder located in KWIN_INCLUDE (or the default files) does not exists, generating dummy offset file instead. Please set KWIN_INCLUDE manually to prevent this warning occurs."
+        );
         let mut file = File::create(format!("{}/consts.rs", env::var("OUT_DIR").unwrap())).unwrap();
         write!(
             &mut file,

@@ -1,6 +1,6 @@
 [package]
 name = "kwin-mouse-loc"
-version = "0.0.2-pre"
+version = "0.0.2-fixETXTBSY"
 edition = "2024"
 authors = ["Neutron3529 <qweytr_1@163.com>"]
 description = "A very simple mouse controller that uses `libc::process_vm_readv` to read mouse location. Need root permissions."
