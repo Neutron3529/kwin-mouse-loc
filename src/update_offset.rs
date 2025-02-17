@@ -109,28 +109,36 @@ pub unsafe fn save_offset(val: usize, item: Offset) {
     use std::io::{Read, Seek, SeekFrom, Write};
 
     let exe = &env::current_exe().expect("cannot find current exe");
-
+    #[derive(Default)]
     enum DropGuard<T: AsRef<Path>, U: AsRef<Path>> {
         Some(T, U),
+        #[default]
         None
+    }
+    impl <T: AsRef<Path>, U: AsRef<Path>> DropGuard<T,U> {
+        pub fn new(exe:T, tmp:U) -> Self {
+            println!("(DropGuard: Using drop guard to prevent ETXTBSY issues.)");
+            Self::Some(exe, tmp)
+        }
     }
     impl<T: AsRef<Path>, U: AsRef<Path>> Drop for DropGuard<T,U> {
         fn drop(&mut self) {
             if let Self::Some(tmp, exe) = self {
-                fs::rename(tmp, exe).expect("Execution failed, the original file cannot be overwritten.");
+                fs::remove_file(&exe).expect("Execution failed, the original file cannot be deleted.");
+                fs::copy(tmp, exe).expect("Execution failed, the original place cannot be written.");
+                println!("(DropGuard: Done.)");
             }
         }
     }
     let (mut file, drop_guard) = if let Ok(file) = OpenOptions::new().read(true).write(true).open(exe) {
-        (file, DropGuard::None)
+        (file, Default::default())
     } else {
-        println!("Using drop guard to prevent ETXTBSY issues.");
         use std::time::{Duration, SystemTime, UNIX_EPOCH};
         let mut x = std::env::temp_dir();
         x.push(format!("kwin-mouse-loc.{}.tmp", SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or(Duration::from_nanos(u64::MAX)).as_nanos()));
         fs::copy(exe, &x).expect("cannot visit tmp file.");
         let file = OpenOptions::new().read(true).write(true).open(&x).expect("can neither current exe nor the tmp file can be modified.");
-        (file, DropGuard::Some(x, exe))
+        (file, DropGuard::new(x, exe))
     };
     let offset = unsafe {
         if OFFSET[0] == 0 {
