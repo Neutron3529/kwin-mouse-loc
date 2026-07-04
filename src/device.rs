@@ -88,8 +88,9 @@ mod bindgen {
                 "L" | "click" => BTN_LEFT,
                 "R" | "rclick" => BTN_RIGHT,
                 "M" | "middle" => BTN_MIDDLE,
+                "C" | "command" | "win" | "meta" => KEY_LEFTMETA,
                 " " | "space" => KEY_SPACE,
-                "\n" | "enter" => KEY_ENTER,
+                "\\n" | "enter" => KEY_ENTER,
                 _ => {
                     eprintln! {"Unsupported {self}, converted to BTN_LEFT. Use uppercase WSAD for key up/down/left/right, LMR for mouse left/middle/right key. Uppercase are often not what it looks like, be careful."}
                     BTN_LEFT
